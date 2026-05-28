@@ -594,6 +594,40 @@ td.r{text-align:right;font-variant-numeric:tabular-nums}
     </button>
   </div>
 
+  <!-- 재고 수량 직접 수정 -->
+  <div class="set-card">
+    <h3><i class="ti ti-adjustments" aria-hidden="true"></i>재고 수량 직접 수정</h3>
+    <div class="frow">
+      <label>품목</label>
+      <select id="adjItem" onchange="onAdjItemChange()">
+        <option value="">품목 선택...</option>
+      </select>
+    </div>
+    <div id="adjCurrent" style="display:none;background:var(--bg);border-radius:var(--r-sm);padding:10px;margin:8px 0;font-size:13px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="color:var(--txt2)">현재 재고</span>
+        <span style="font-weight:600" id="adjCurrentVal">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="color:var(--txt2)">총 입고</span>
+        <span id="adjCurrentIn">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--txt2)">총 출고</span>
+        <span id="adjCurrentOut">-</span>
+      </div>
+    </div>
+    <div class="frow">
+      <label>현재고</label>
+      <input type="number" id="adjStock" placeholder="수정할 재고 수량" min="0" inputmode="numeric">
+    </div>
+    <div class="frow">
+      <label>총입고</label>
+      <input type="number" id="adjInQty" placeholder="수정할 총 입고 수량" min="0" inputmode="numeric">
+    </div>
+    <button class="btn-primary" onclick="adjustStock()" style="background:var(--green)">재고 수정 저장</button>
+  </div>
+
   <div class="set-card">
     <h3><i class="ti ti-barcode" aria-hidden="true"></i>바코드 등록 현황</h3>
     <div id="bcList" style="font-size:12px;color:var(--txt2);line-height:2.2"></div>
@@ -712,7 +746,7 @@ function switchTab(t, el){
   if(t!=='scan' && streaming) stopCam();
   if(t==='stock') renderStock('all');
   if(t==='log') renderLog('all');
-  if(t==='settings') renderBcList();
+  if(t==='settings'){ renderBcList(); initAdjSelect(); }
 }
 function goSettings(){
   switchTab('settings', document.querySelectorAll('.tab')[3]);
@@ -1131,6 +1165,57 @@ function filterLog(f, el){
 // ═══════════════════════════════════════
 //  SETTINGS — BARCODE LIST
 // ═══════════════════════════════════════
+// ═══════════════════════════════════════
+//  재고 직접 수정
+// ═══════════════════════════════════════
+function initAdjSelect(){
+  var sel = document.getElementById('adjItem');
+  if(sel.options.length > 1) return; // 이미 초기화됨
+  items.forEach(function(it, i){
+    var opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = it.name;
+    sel.appendChild(opt);
+  });
+}
+
+function onAdjItemChange(){
+  var idx = document.getElementById('adjItem').value;
+  var cur = document.getElementById('adjCurrent');
+  if(idx === ''){ cur.style.display='none'; return; }
+  var it = items[parseInt(idx)];
+  cur.style.display = 'block';
+  document.getElementById('adjCurrentVal').textContent = it.stock + '개';
+  document.getElementById('adjCurrentIn').textContent  = it.inQty + '개';
+  document.getElementById('adjCurrentOut').textContent = it.outQty + '개';
+  document.getElementById('adjStock').value  = it.stock;
+  document.getElementById('adjInQty').value  = it.inQty;
+}
+
+function adjustStock(){
+  var idx = document.getElementById('adjItem').value;
+  if(idx === ''){ toast('품목을 선택하세요'); return; }
+  var it = items[parseInt(idx)];
+  var newStock = document.getElementById('adjStock').value;
+  var newInQty = document.getElementById('adjInQty').value;
+  if(newStock === '' && newInQty === ''){ toast('수정할 값을 입력하세요'); return; }
+
+  if(newStock !== '') it.stock  = parseInt(newStock);
+  if(newInQty !== '') it.inQty  = parseInt(newInQty);
+  // outQty는 inQty - stock 으로 자동 계산
+  if(newStock !== '' && newInQty !== ''){
+    it.outQty = Math.max(0, it.inQty - it.stock);
+  }
+
+  saveStock();
+  onAdjItemChange(); // 현재값 갱신
+  toast('✓ ' + it.name + ' 재고 수정 완료');
+
+  // 스캔 탭에 현재 품목 표시 중이면 갱신
+  if(currentItem && currentItem.name === it.name) refreshStockNums(it);
+  renderStock('all');
+}
+
 function renderBcList(){
   var el = document.getElementById('bcList');
   el.innerHTML = items.map(function(it){
