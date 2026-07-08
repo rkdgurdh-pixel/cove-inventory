@@ -1440,7 +1440,7 @@ function fetchItemsFromLedger(){
 function pushStockToLedger(entry){
   fetch(ledgerUrl, {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    headers: {'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({
       action: 'updateStock',
       id: entry.id,
@@ -1472,7 +1472,7 @@ function pushStockToLedger(entry){
 function pushRegisterToLedger(it){
   fetch(ledgerUrl, {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    headers: {'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({
       action: 'registerItem',
       name: it.name,
@@ -1498,7 +1498,7 @@ function pushSaleToSheet(entry){
 
   fetch(scriptUrl, {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    headers: {'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({
       action: 'sale',
       monthSheet: monthSheet,   // 예: "26.05"
@@ -2028,7 +2028,7 @@ function saveChannelsToSheet(){
   renderChannels();
   if(!ledgerConnected){ toast('로컬에 저장됨 (시트 미연결)'); return; }
   fetch(ledgerUrl, {
-    method:'POST', headers:{'Content-Type':'application/json'},
+    method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify({action:'saveChannels', channels:channels})
   })
   .then(function(r){ return r.json(); })
@@ -2165,7 +2165,7 @@ function saveAccounting(id, uid, qty, direction){
   };
   payload.supply = payload.total - payload.vat;
   fetch(ledgerUrl, {
-    method:'POST', headers:{'Content-Type':'application/json'},
+    method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify(payload)
   })
   .then(function(r){ return r.json(); })
